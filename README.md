@@ -28,3 +28,7 @@ This is the building blocks for a phoneme based audio compressor. Codex really d
 ### kinematics
 
 A robot arm solver.
+
+### embedded
+
+This takes an existing state machine implementation and example usage, and adds a new state.
