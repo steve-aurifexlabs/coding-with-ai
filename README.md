@@ -2,6 +2,10 @@
 
 All code is this repo was made by me with the help of Codex and ChatGPT. They show projects that involved editing, cherry picking, reprompting, and mostly editing generated code and re-running completion to force specific patterns. The game is the best example of this.
 
+## Platformer
+
+An example of a larger project.
+
 ## First Batch
 
 This first batch was all created in the first 24 hours of using ChatGPT and Codex.
