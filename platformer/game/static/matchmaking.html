@@ -1,0 +1,199 @@
+<!doctype html>
+<!--
+    Create a standalone HTML file that uses inline scripts and customElements.define that is a matchmaking lobby
+    and uses this REST API endpoint:
+        app.get('/matchmaking', (req, res) => {
+          const { playerId } = req.query;
+          const match = matchmaking.findMatch(playerId);
+          res.send(match);
+        });
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Matchmaking</title>
+    <style>
+        .matchmaking-lobby {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .matchmaking-lobby__player {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 50px;
+            border: 1px solid black;
+            margin-bottom: 10px;
+        }
+        .matchmaking-lobby__player-name {
+            margin-left: 10px;
+        }
+        .matchmaking-lobby__player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #ccc;
+        }
+        .matchmaking-lobby__player-avatar--player-1 {
+            background-color: #f00;
+        }
+        .matchmaking-lobby__player-avatar--player-2 {
+            background-color: #0f0;
+        }
+        .matchmaking-lobby__player-avatar--player-3 {
+            background-color: #00f;
+        }
+        .matchmaking-lobby__player-avatar--player-4 {
+            background-color: #ff0;
+        }
+    </style>
+    <script>
+        const matchmakingLobby = document.createElement('div');
+        matchmakingLobby.classList.add('matchmaking-lobby');
+        document.body.appendChild(matchmakingLobby);
+
+        const playerId = Math.floor(Math.random() * 100);
+        const playerName = `Player ${playerId}`;
+        const playerAvatar = document.createElement('div');
+        playerAvatar.classList.add('matchmaking-lobby__player-avatar');
+        playerAvatar.classList.add(`matchmaking-lobby__player-avatar--player-${playerId}`);
+        const playerNameElement = document.createElement('div');
+        playerNameElement.classList.add('matchmaking-lobby__player-name');
+        playerNameElement.innerText = playerName;
+        const playerElement = document.createElement('div');
+        playerElement.classList.add('matchmaking-lobby__player');
+        playerElement.appendChild(playerAvatar);
+        playerElement.appendChild(playerNameElement);
+        matchmakingLobby.appendChild(playerElement);
+
+        const matchmakingLobbyPlayers = document.createElement('div');
+        matchmakingLobbyPlayers.classList.add('matchmaking-lobby__players');
+        matchmakingLobby.appendChild(matchmakingLobbyPlayers);
+
+        const matchmakingLobbyStatus = document.createElement('div');
+        matchmakingLobbyStatus.classList.add('matchmaking-lobby__status');
+        matchmakingLobby.appendChild(matchmakingLobbyStatus);
+
+        const matchmakingLobbyStart = document.createElement('button');
+        matchmakingLobbyStart.classList.add('matchmaking-lobby__start');
+        matchmakingLobbyStart.innerText = 'Start';
+        matchmakingLobby.appendChild(matchmakingLobbyStart);
+
+        const matchmakingLobbyLeave = document.createElement('button');
+        matchmakingLobbyLeave.classList.add('matchmaking-lobby__leave');
+        matchmakingLobbyLeave.innerText = 'Leave';
+        matchmakingLobby.appendChild(matchmakingLobbyLeave);
+
+        const matchmakingLobbyError = document.createElement('div');
+        matchmakingLobbyError.classList.add('matchmaking-lobby__error');
+        matchmakingLobby.appendChild(matchmakingLobbyError);
+
+        const matchmakingLobbySuccess = document.createElement('div');
+        matchmakingLobbySuccess.classList.add('matchmaking-lobby__success');
+        matchmakingLobby.appendChild(matchmakingLobbySuccess);
+
+        const matchmakingLobbyLoading = document.createElement('div');
+        matchmakingLobbyLoading.classList.add('matchmaking-lobby__loading');
+        matchmakingLobbyLoading.innerText = 'Loading...';
+        matchmakingLobby.appendChild(matchmakingLobbyLoading);
+
+        const matchmakingLobbyPlayersList = [];
+
+        const updateMatchmakingLobby = () => {
+            matchmakingLobbyPlayers.innerHTML = '';
+            matchmakingLobbyPlayersList.forEach((player) => {
+                const playerAvatar = document.createElement('div');
+                playerAvatar.classList.add('matchmaking-lobby__player-avatar');
+                playerAvatar.classList.add(`matchmaking-lobby__player-avatar--player-${player.id}`);
+                const playerNameElement = document.createElement('div');
+                playerNameElement.classList.add('matchmaking-lobby__player-name');
+                playerNameElement.innerText = player.name;
+                const playerElement = document.createElement('div');
+                playerElement.classList.add('matchmaking-lobby__player');
+                playerElement.appendChild(playerAvatar);
+                playerElement.appendChild(playerNameElement);
+                matchmakingLobbyPlayers.appendChild(playerElement);
+            });
+        };
+
+        const getMatchmakingLobby = () => {
+            matchmakingLobbyLoading.style.display = 'block';
+            fetch(`/matchmaking?playerId=${playerId}`)
+                .then((response) => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Network response was not ok.');
+                })
+                .then((match) => {
+                    matchmakingLobbyLoading.style.display = 'none';
+                    matchmakingLobbyPlayersList.length = 0;
+                    match.players.forEach((player) => {
+                        matchmakingLobbyPlayersList.push(player);
+                    });
+                    updateMatchmakingLobby();
+                    if (match.players.length === 4) {
+                        matchmakingLobbyStatus.innerText = 'Match is ready!';
+                        matchmakingLobbyStart.style.display = 'block';
+                    } else {
+                        matchmakingLobbyStatus.innerText = 'Waiting for players...';
+                        matchmakingLobbyStart.style.display = 'none';
+                    }
+                })
+                .catch((error) => {
+                    matchmakingLobbyLoading.style.display = 'none';
+                    matchmakingLobbyError.innerText = `Error: ${error.message}`;
+                });
+        };
+
+        const startMatchmakingLobby = () => {
+            matchmakingLobbyLoading.style.display = 'block';
+            fetch(`/matchmaking/start?playerId=${playerId}`)
+                .then((response) => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Network response was not ok.');
+                })
+                .then((match) => {
+                    matchmakingLobbyLoading.style.display = 'none';
+                    matchmakingLobbySuccess.innerText = `Match started! ${match.id}`;
+                })
+                .catch((error) => {
+                    matchmakingLobbyLoading.style.display = 'none';
+                    matchmakingLobbyError.innerText = `Error: ${error.message}`;
+                });
+        };
+
+        const leaveMatchmakingLobby = () => {
+            matchmakingLobbyLoading.style.display = 'block';
+            fetch(`/matchmaking/leave?playerId=${playerId}`)
+                .then((response) => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Network response was not ok.');
+                })
+                .then((match) => {
+                    matchmakingLobbyLoading.style.display = 'none';
+                    matchmakingLobbySuccess.innerText = `Match left!`;
+                })
+                .catch((error) => {
+                    matchmakingLobbyLoading.style.display = 'none';
+                    matchmakingLobbyError.innerText = `Error: ${error.message}`;
+                });
+        };
+
+        getMatchmakingLobby();
+        setInterval(getMatchmakingLobby, 1000);
+
+        matchmakingLobbyStart.addEventListener('click', startMatchmakingLobby);
+        matchmakingLobbyLeave.addEventListener('click', leaveMatchmakingLobby);
+    </script>
+</head>
+<body>
+</body>
+</html>
